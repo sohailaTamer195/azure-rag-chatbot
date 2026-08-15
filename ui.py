@@ -1,9 +1,16 @@
 import streamlit as st
+from openai import RateLimitError
+
 from services.pdf_loader import load_pdf
 from services.chunker import chunk_text
 from services.embeddings import embed_chunks
 from services.vector_store import build_index
 from services.rag_engine import rag_answer
+
+@st.cache_data(show_spinner="Creating document embeddings...")
+def cached_embed_chunks(chunks):
+    return embed_chunks(tuple(chunks))
+
 
 def run_ui():
     st.title("PDF RAG Chatbot (Azure OpenAI)")
@@ -23,7 +30,14 @@ def run_ui():
 
         chunks = chunk_text(text)
 
-        embeddings = embed_chunks(chunks)
+        try:
+            embeddings = cached_embed_chunks(tuple(chunks))
+        except RateLimitError:
+            st.error(
+                "Azure OpenAI is rate-limiting embedding requests. "
+                "Wait a moment and try again, or check the deployment quota."
+            )
+            return
         index = build_index(embeddings)
 
         query = st.chat_input("Ask a question based on the PDF")
@@ -32,7 +46,14 @@ def run_ui():
             with st.chat_message("user"):
                 st.write(query)
 
-            answer = rag_answer(query, index, chunks)
+            try:
+                answer = rag_answer(query, index, chunks)
+            except RateLimitError:
+                st.error(
+                    "Azure OpenAI is rate-limiting this request. "
+                    "Wait a moment and try again, or check the deployment quota."
+                )
+                return
 
             with st.chat_message("assistant"):
                 st.write(answer)
