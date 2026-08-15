@@ -1,3 +1,5 @@
+import io
+
 import streamlit as st
 from openai import RateLimitError
 
@@ -7,9 +9,20 @@ from services.embeddings import embed_chunks
 from services.vector_store import build_index
 from services.rag_engine import rag_answer
 
+@st.cache_data(show_spinner="Reading PDF...")
+def prepare_pdf(file_bytes):
+    text = load_pdf(io.BytesIO(file_bytes))
+    return text, tuple(chunk_text(text))
+
+
 @st.cache_data(show_spinner="Creating document embeddings...")
 def cached_embed_chunks(chunks):
     return embed_chunks(tuple(chunks))
+
+
+@st.cache_resource(show_spinner="Building search index...")
+def cached_build_index(embeddings):
+    return build_index(embeddings)
 
 
 def run_ui():
@@ -20,7 +33,7 @@ def run_ui():
     if uploaded_pdf:
         st.success("PDF uploaded successfully.")
 
-        text = load_pdf(uploaded_pdf)
+        text, chunks = prepare_pdf(uploaded_pdf.getvalue())
         if not text.strip():
             st.error(
                 "No selectable text was found in this PDF. "
@@ -28,14 +41,12 @@ def run_ui():
             )
             return
 
-        chunks = chunk_text(text)
-
         if sum(len(chunk) for chunk in chunks) <= 20000:
             index = None
         else:
             try:
                 embeddings = cached_embed_chunks(tuple(chunks))
-                index = build_index(embeddings)
+                index = cached_build_index(embeddings)
             except RateLimitError:
                 index = None
                 st.warning(
