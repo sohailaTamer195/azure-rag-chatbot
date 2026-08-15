@@ -33,7 +33,10 @@ def retrieve(query, index, chunks, k=4):
 
 
 def rag_answer(query, index, chunks):
-    context_chunks = retrieve(query, index, chunks)
+    # For small documents, passing all text is more reliable than ranking
+    # chunks, especially for vague references such as "number 1".
+    document_size = sum(len(chunk) for chunk in chunks)
+    context_chunks = chunks if document_size <= 20000 else retrieve(query, index, chunks)
     context = "\n\n".join(context_chunks)
 
     messages = [
@@ -41,7 +44,9 @@ def rag_answer(query, index, chunks):
             "role": "system",
             "content": (
                 "Answer ONLY using the provided PDF context. "
-                "If the answer is not in the PDF, say you don't know."
+                "Answer the user's question directly and briefly. "
+                "If the answer is not in the PDF, say you don't know. "
+                "Use the same language as the user's question when possible."
             ),
         },
         {
