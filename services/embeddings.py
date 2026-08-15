@@ -5,7 +5,19 @@ from openai import RateLimitError
 from models.azure_client import client
 from config.settings import EMBED_DEPLOYMENT
 
-def embed_chunks(chunks, batch_size=16, max_retries=5):
+def _retry_delay(error, attempt):
+    response = getattr(error, "response", None)
+    headers = getattr(response, "headers", {})
+    retry_after = headers.get("retry-after") or headers.get("Retry-After")
+    if retry_after:
+        try:
+            return max(float(retry_after), 60.0)
+        except (TypeError, ValueError):
+            pass
+    return min(2 ** attempt, 16)
+
+
+def embed_chunks(chunks, batch_size=4, batch_delay=1.0, max_retries=5):
     embeddings = []
     for start in range(0, len(chunks), batch_size):
         batch = chunks[start : start + batch_size]
@@ -17,10 +29,13 @@ def embed_chunks(chunks, batch_size=16, max_retries=5):
                 )
                 embeddings.extend(item.embedding for item in resp.data)
                 break
-            except RateLimitError:
+            except RateLimitError as error:
                 if attempt == max_retries:
                     raise
-                time.sleep(min(2 ** attempt, 16))
+                time.sleep(_retry_delay(error, attempt))
+
+        if start + batch_size < len(chunks):
+            time.sleep(batch_delay)
 
     embeddings = np.array(embeddings, dtype="float32")
     norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
