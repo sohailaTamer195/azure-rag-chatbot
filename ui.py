@@ -21,9 +21,6 @@ def run_ui():
             )
             return
 
-        with st.expander("Preview extracted text"):
-            st.text(text[:3000])
-
         chunks = chunk_text(text)
 
         embeddings = embed_chunks(chunks)
