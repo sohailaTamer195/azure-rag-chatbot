@@ -92,6 +92,8 @@ def rag_answer(query, index, chunks):
                 "question is phrased differently from the source text. "
                 "Do not use generic refusal phrases; state the most relevant "
                 "information available in the PDF. "
+                "End each answer with the supporting page number in the format "
+                "'Source: Page N'. "
                 "Use the same language as the user's question when possible."
             ),
         },

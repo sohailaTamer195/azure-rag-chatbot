@@ -25,3 +25,13 @@ def chunk_text(text, chunk_size=800, overlap=200):
             break
         start = end - overlap
     return chunks
+
+
+def chunk_pages(pages, chunk_size=800, overlap=200):
+    chunks = []
+    for page_number, page_text in pages:
+        chunks.extend(
+            f"[Page {page_number}]\n{chunk}"
+            for chunk in chunk_text(page_text, chunk_size, overlap)
+        )
+    return chunks

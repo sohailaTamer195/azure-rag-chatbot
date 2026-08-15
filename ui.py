@@ -3,16 +3,17 @@ import io
 import streamlit as st
 from openai import RateLimitError
 
-from services.pdf_loader import load_pdf
-from services.chunker import chunk_text
+from services.pdf_loader import load_pdf_pages
+from services.chunker import chunk_pages
 from services.embeddings import embed_chunks
 from services.vector_store import build_index
 from services.rag_engine import rag_answer
 
 @st.cache_data(show_spinner="Reading PDF...")
 def prepare_pdf(file_bytes):
-    text = load_pdf(io.BytesIO(file_bytes))
-    return text, tuple(chunk_text(text))
+    pages = load_pdf_pages(io.BytesIO(file_bytes))
+    text = "\n\n".join(page_text for _, page_text in pages)
+    return text, tuple(chunk_pages(pages))
 
 
 @st.cache_data(show_spinner="Creating document embeddings...")
