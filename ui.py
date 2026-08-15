@@ -30,15 +30,18 @@ def run_ui():
 
         chunks = chunk_text(text)
 
-        try:
-            embeddings = cached_embed_chunks(tuple(chunks))
-        except RateLimitError:
-            st.error(
-                "Azure OpenAI is rate-limiting embedding requests. "
-                "Wait a moment and try again, or check the deployment quota."
-            )
-            return
-        index = build_index(embeddings)
+        if sum(len(chunk) for chunk in chunks) <= 20000:
+            index = None
+        else:
+            try:
+                embeddings = cached_embed_chunks(tuple(chunks))
+                index = build_index(embeddings)
+            except RateLimitError:
+                index = None
+                st.warning(
+                    "Semantic search is temporarily unavailable. "
+                    "Using keyword search instead."
+                )
 
         query = st.chat_input("Ask a question based on the PDF")
 
