@@ -1,4 +1,5 @@
 import io
+import hashlib
 
 import streamlit as st
 from openai import RateLimitError
@@ -34,7 +35,9 @@ def run_ui():
     if uploaded_pdf:
         st.success("PDF uploaded successfully.")
 
-        text, chunks = prepare_pdf(uploaded_pdf.getvalue())
+        file_bytes = uploaded_pdf.getvalue()
+        document_key = hashlib.sha256(file_bytes).hexdigest()
+        text, chunks = prepare_pdf(file_bytes)
         if not text.strip():
             st.error(
                 "No selectable text was found in this PDF. "
@@ -45,15 +48,23 @@ def run_ui():
         if sum(len(chunk) for chunk in chunks) <= 20000:
             index = None
         else:
-            try:
-                embeddings = cached_embed_chunks(tuple(chunks))
-                index = cached_build_index(embeddings)
-            except RateLimitError:
+            if st.session_state.get("embedding_unavailable_for") == document_key:
                 index = None
                 st.warning(
                     "Semantic search is temporarily unavailable. "
                     "Using keyword search instead."
                 )
+            else:
+                try:
+                    embeddings = cached_embed_chunks(tuple(chunks))
+                    index = cached_build_index(embeddings)
+                except RateLimitError:
+                    st.session_state.embedding_unavailable_for = document_key
+                    index = None
+                    st.warning(
+                        "Semantic search is temporarily unavailable. "
+                        "Using keyword search instead."
+                    )
 
         query = st.chat_input("Ask a question based on the PDF")
 
