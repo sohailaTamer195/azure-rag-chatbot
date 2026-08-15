@@ -14,6 +14,13 @@ def run_ui():
         st.success("PDF uploaded successfully.")
 
         text = load_pdf(uploaded_pdf)
+        if not text.strip():
+            st.error(
+                "No selectable text was found in this PDF. "
+                "Please upload a text-based PDF or run OCR on the scanned document first."
+            )
+            return
+
         chunks = chunk_text(text)
 
         embeddings = embed_chunks(chunks)

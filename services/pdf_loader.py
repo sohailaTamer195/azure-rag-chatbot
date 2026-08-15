@@ -2,7 +2,9 @@ import pypdf
 
 def load_pdf(file):
     reader = pypdf.PdfReader(file)
-    text = ""
+    pages = []
     for page in reader.pages:
-        text += page.extract_text() + "\n"
-    return text
+        page_text = page.extract_text() or ""
+        if page_text.strip():
+            pages.append(page_text.strip())
+    return "\n\n".join(pages)
