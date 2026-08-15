@@ -21,7 +21,7 @@ def _terms(text):
     }
 
 
-def retrieve(query, index, chunks, k=4):
+def retrieve(query, index, chunks, k=6):
     query_normalized = " ".join(re.findall(r"\w+", query.casefold()))
     query_terms = _terms(query)
     semantic_indexes = []
