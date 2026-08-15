@@ -7,9 +7,23 @@ from services.vector_store import search_index
 from models.azure_client import client
 from config.settings import CHAT_DEPLOYMENT
 
+STOP_WORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
+    "how", "in", "is", "it", "of", "on", "or", "that", "the", "this",
+    "to", "was", "what", "when", "where", "which", "who", "why", "with",
+}
+
+
+def _terms(text):
+    return {
+        term for term in re.findall(r"\w+", text.casefold())
+        if term not in STOP_WORDS and len(term) > 2
+    }
+
 
 def retrieve(query, index, chunks, k=4):
-    query_terms = set(re.findall(r"\w+", query.casefold()))
+    query_normalized = " ".join(re.findall(r"\w+", query.casefold()))
+    query_terms = _terms(query)
     semantic_indexes = []
     if index is not None:
         try:
@@ -20,12 +34,15 @@ def retrieve(query, index, chunks, k=4):
 
     lexical_scores = []
     for position, chunk in enumerate(chunks):
-        chunk_terms = set(re.findall(r"\w+", chunk.casefold()))
+        chunk_normalized = " ".join(re.findall(r"\w+", chunk.casefold()))
+        chunk_terms = _terms(chunk)
         score = len(chunk_terms.intersection(query_terms))
+        if query_normalized and query_normalized in chunk_normalized:
+            score += len(query_terms) + 2
         if score:
             lexical_scores.append((score, position))
     lexical_indexes = [
-        position for _, position in sorted(lexical_scores, reverse=True)[:k]
+        position for _, position in sorted(lexical_scores, key=lambda item: (-item[0], item[1]))[:k]
     ]
 
     number_one_query = bool(
@@ -35,12 +52,12 @@ def retrieve(query, index, chunks, k=4):
         markers = {"1", "١", "one", "first", "الأول", "الاول", "السؤال"}
         scored = []
         for position, chunk in enumerate(chunks):
-            chunk_terms = set(re.findall(r"\w+", chunk.casefold()))
+            chunk_terms = _terms(chunk)
             score = len(chunk_terms.intersection(markers))
             if score:
                 scored.append((score, position))
         lexical_indexes.extend(
-            position for _, position in sorted(scored, reverse=True)[:k]
+            position for _, position in sorted(scored, key=lambda item: (-item[0], item[1]))[:k]
         )
 
     indexes = []
