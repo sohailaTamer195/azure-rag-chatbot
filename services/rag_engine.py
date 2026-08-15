@@ -61,12 +61,18 @@ def retrieve(query, index, chunks, k=4):
         )
 
     indexes = []
-    for position in lexical_indexes + semantic_indexes:
+    for position in semantic_indexes + lexical_indexes:
         if 0 <= position < len(chunks) and position not in indexes:
             indexes.append(position)
     if not indexes:
         return chunks[:k]
-    return [chunks[i] for i in indexes[: max(k, len(lexical_indexes))]]
+
+    context_indexes = []
+    for position in indexes[:k]:
+        for nearby_position in range(position - 1, position + 2):
+            if 0 <= nearby_position < len(chunks) and nearby_position not in context_indexes:
+                context_indexes.append(nearby_position)
+    return [chunks[position] for position in sorted(context_indexes)]
 
 
 def rag_answer(query, index, chunks):
