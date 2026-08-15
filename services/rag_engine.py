@@ -88,7 +88,9 @@ def rag_answer(query, index, chunks):
             "content": (
                 "Answer ONLY using the provided PDF context. "
                 "Answer the user's question directly and briefly. "
-                "If the answer is not in the PDF, say you don't know. "
+                "Use the closest relevant information in the PDF. "
+                "If the PDF does not contain the answer, say: 'The uploaded PDF "
+                "does not contain enough information to answer that question.' "
                 "Use the same language as the user's question when possible."
             ),
         },
