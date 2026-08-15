@@ -16,8 +16,15 @@ def _get_setting(name: str) -> str | None:
 
 	if st is not None:
 		try:
-			return st.secrets.get(name)
-		except Exception:
+			secrets = st.secrets
+			value = secrets.get(name)
+			if value:
+				return value
+
+			# Also support secrets pasted under a [default] TOML section.
+			default_secrets = secrets.get("default", {})
+			return default_secrets.get(name)
+		except (FileNotFoundError, KeyError, TypeError):
 			# Streamlit secrets are unavailable outside a configured app.
 			pass
 
