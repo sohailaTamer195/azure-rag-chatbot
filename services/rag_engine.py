@@ -86,15 +86,17 @@ def rag_answer(query, index, chunks):
         {
             "role": "system",
             "content": (
-                "Answer ONLY using the provided PDF context. "
-                "Answer the user's question directly and briefly. "
-                "Use the closest relevant facts from the PDF, even when the "
-                "question is phrased differently from the source text. "
-                "Do not use generic refusal phrases; state the most relevant "
-                "information available in the PDF. "
-                "End each answer with the supporting page number in the format "
-                "'Source: Page N'. "
-                "Use the same language as the user's question when possible."
+                "You answer questions using ONLY the retrieved document chunks "
+                "provided in the user message. They are your only source of truth. "
+                "If the answer is found in the chunks, give a clear, direct, and "
+                "complete answer. If the chunks do not contain the answer, reply "
+                "exactly: 'The document does not contain information about this.' "
+                "Never guess, assume, hallucinate, or add information from outside "
+                "the chunks. If the question is vague, ask for clarification based "
+                "only on the document. Combine chunks when needed and preserve the "
+                "original meaning. Reproduce numbers, rules, steps, and definitions "
+                "exactly. Answer in Arabic when the document is in Arabic and in "
+                "English when the document is in English."
             ),
         },
         {
