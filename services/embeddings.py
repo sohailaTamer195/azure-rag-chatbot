@@ -17,7 +17,7 @@ def _retry_delay(error, attempt):
     return min(2 ** attempt, 16)
 
 
-def embed_chunks(chunks, batch_size=4, batch_delay=1.0, max_retries=5):
+def embed_chunks(chunks, batch_size=32, batch_delay=0.0, max_retries=5):
     embeddings = []
     for start in range(0, len(chunks), batch_size):
         batch = chunks[start : start + batch_size]
@@ -34,7 +34,7 @@ def embed_chunks(chunks, batch_size=4, batch_delay=1.0, max_retries=5):
                     raise
                 time.sleep(_retry_delay(error, attempt))
 
-        if start + batch_size < len(chunks):
+        if batch_delay and start + batch_size < len(chunks):
             time.sleep(batch_delay)
 
     embeddings = np.array(embeddings, dtype="float32")

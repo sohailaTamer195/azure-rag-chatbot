@@ -26,9 +26,9 @@ def prepare_pdf(file_bytes):
     return text, tuple(chunk_pages(pages))
 
 
-@st.cache_data(show_spinner="Tuning your document search...")
+@st.cache_data(show_spinner="Making your document ready...")
 def cached_embed_chunks(chunks):
-    return embed_chunks(tuple(chunks))
+    return embed_chunks(tuple(chunks), batch_size=32, batch_delay=0.0)
 
 
 @st.cache_resource(show_spinner="Setting up your workspace...")
