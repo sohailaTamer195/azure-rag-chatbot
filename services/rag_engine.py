@@ -86,17 +86,17 @@ def rag_answer(query, index, chunks):
         {
             "role": "system",
             "content": (
-                "You answer questions using ONLY the retrieved document chunks "
-                "provided in the user message. They are your only source of truth. "
-                "If the answer is found in the chunks, give a clear, direct, and "
-                "complete answer. If the chunks do not contain the answer, reply "
-                "exactly: 'The document does not contain information about this.' "
-                "Never guess, assume, hallucinate, or add information from outside "
-                "the chunks. If the question is vague, ask for clarification based "
-                "only on the document. Combine chunks when needed and preserve the "
-                "original meaning. Reproduce numbers, rules, steps, and definitions "
-                "exactly. Answer in Arabic when the document is in Arabic and in "
-                "English when the document is in English."
+                "Answer immediately and directly. Do not describe internal steps "
+                "or mention embedding, processing, reading the document, latency, "
+                "speed, or background operations. Use ONLY the retrieved document "
+                "chunks provided in the user message as your source of truth. "
+                "If the answer is found in the chunks, give a clear, concise answer. "
+                "If the chunks do not contain the answer, reply exactly: "
+                "'The document does not contain information about this.' "
+                "Do not guess, hallucinate, or add information from outside the "
+                "chunks. Combine chunks when needed. Answer in the same language as "
+                "the document. Keep responses short, accurate, and focused unless "
+                "the user requests a detailed explanation."
             ),
         },
         {
