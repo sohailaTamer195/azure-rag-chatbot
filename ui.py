@@ -5,10 +5,8 @@ import streamlit as st
 from openai import RateLimitError
 
 from services.chunker import chunk_pages
-from services.embeddings import embed_chunks
 from services.pdf_loader import load_pdf_pages
 from services.rag_engine import rag_answer
-from services.vector_store import build_index
 
 
 st.set_page_config(
@@ -24,16 +22,6 @@ def prepare_pdf(file_bytes):
     pages = load_pdf_pages(io.BytesIO(file_bytes))
     text = "\n\n".join(page_text for _, page_text in pages)
     return text, tuple(chunk_pages(pages))
-
-
-@st.cache_data(show_spinner="Making your document ready...")
-def cached_embed_chunks(chunks):
-    return embed_chunks(tuple(chunks), batch_size=32, batch_delay=0.0)
-
-
-@st.cache_resource(show_spinner="Setting up your workspace...")
-def cached_build_index(embeddings):
-    return build_index(embeddings)
 
 
 def apply_theme():
@@ -222,19 +210,7 @@ def run_ui():
         st.error("This PDF does not contain selectable text. Please choose a text-based PDF.")
         return
 
-    if sum(len(chunk) for chunk in chunks) <= 20000:
-        index = None
-    elif st.session_state.get("embedding_unavailable_for") == document_key:
-        index = None
-        st.info("Your document is ready. We are using a lightweight search mode for now.")
-    else:
-        try:
-            embeddings = cached_embed_chunks(tuple(chunks))
-            index = cached_build_index(embeddings)
-        except RateLimitError:
-            st.session_state.embedding_unavailable_for = document_key
-            index = None
-            st.info("Your document is ready. We are using a lightweight search mode for now.")
+    index = None
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
