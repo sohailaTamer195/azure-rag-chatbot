@@ -58,19 +58,11 @@ def retrieve(query, index, chunks, k=6):
     if not indexes:
         return chunks[:k]
 
-    context_indexes = []
-    for position in indexes[:k]:
-        for nearby_position in range(position - 1, position + 2):
-            if 0 <= nearby_position < len(chunks) and nearby_position not in context_indexes:
-                context_indexes.append(nearby_position)
-    return [chunks[position] for position in sorted(context_indexes)]
+    return [chunks[position] for position in sorted(indexes[:k])]
 
 
 def rag_answer(query, index, chunks):
-    # For small documents, passing all text is more reliable than ranking
-    # chunks, especially for vague references such as "number 1".
-    document_size = sum(len(chunk) for chunk in chunks)
-    context_chunks = chunks if document_size <= 20000 else retrieve(query, index, chunks)
+    context_chunks = retrieve(query, index, chunks)
     context = "\n\n".join(context_chunks)
 
     messages = [
