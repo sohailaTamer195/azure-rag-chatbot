@@ -2,8 +2,6 @@ import re
 
 from openai import RateLimitError
 
-from services.embeddings import embed_chunks
-from services.vector_store import search_index
 from models.azure_client import client
 from config.settings import CHAT_DEPLOYMENT
 
@@ -24,13 +22,6 @@ def _terms(text):
 def retrieve(query, index, chunks, k=6):
     query_normalized = " ".join(re.findall(r"\w+", query.casefold()))
     query_terms = _terms(query)
-    semantic_indexes = []
-    if index is not None:
-        try:
-            q_emb = embed_chunks([query])
-            semantic_indexes = list(search_index(q_emb, index, k))
-        except RateLimitError:
-            pass
 
     lexical_scores = []
     for position, chunk in enumerate(chunks):
@@ -61,7 +52,7 @@ def retrieve(query, index, chunks, k=6):
         )
 
     indexes = []
-    for position in semantic_indexes + lexical_indexes:
+    for position in lexical_indexes:
         if 0 <= position < len(chunks) and position not in indexes:
             indexes.append(position)
     if not indexes:
