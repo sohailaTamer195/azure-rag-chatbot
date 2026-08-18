@@ -10,14 +10,14 @@ from services.rag_engine import rag_answer
 
 
 st.set_page_config(
-    page_title="Neon Archive | PDF Chat",
-    page_icon="N",
+    page_title="PDF RAG Chatbot",
+    page_icon="P",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 
-@st.cache_data(show_spinner="Preparing your document...")
+@st.cache_data(show_spinner="Reading your PDF...")
 def prepare_pdf(file_bytes):
     pages = load_pdf_pages(io.BytesIO(file_bytes))
     text = "\n\n".join(page_text for _, page_text in pages)
@@ -148,26 +148,26 @@ def apply_theme():
 def render_sidebar(document_name=None):
     with st.sidebar:
         st.markdown(
-            '<div class="brand"><div class="brand-mark">N</div><div class="brand-name">Neon Archive</div></div>',
+            '<div class="brand"><div class="brand-mark">P</div><div class="brand-name">PDF Chat</div></div>',
             unsafe_allow_html=True,
         )
         if st.button("New chat", icon=":material/add:", use_container_width=True):
             st.session_state.messages = []
             st.rerun()
 
-        st.markdown('<div class="section-label">File</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">Document</div>', unsafe_allow_html=True)
         if document_name:
             st.markdown(
                 f'<div class="file-card"><div class="file-icon">PDF</div><div><div class="file-name">{document_name}</div><div class="file-state">Ready</div></div></div>',
                 unsafe_allow_html=True,
             )
         else:
-            st.caption("No file")
+            st.caption("No document")
 
-        st.markdown('<div class="section-label">Tips</div>', unsafe_allow_html=True)
-        st.markdown('<div class="tip"><strong>Ask clearly</strong>Use complete questions.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="tip"><strong>Be specific</strong>Names and dates help.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="tip"><strong>Follow up</strong>Keep exploring.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">Try this</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tip"><strong>Start simply</strong>Ask a clear question.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tip"><strong>Get specific</strong>Names and dates help.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tip"><strong>Keep going</strong>Ask a follow-up.</div>', unsafe_allow_html=True)
 
 
 def run_ui():
@@ -177,7 +177,7 @@ def run_ui():
         st.session_state.messages = []
 
     uploaded_pdf = st.file_uploader(
-        "Drop a PDF here",
+        "Upload a PDF",
         type=["pdf"],
         label_visibility="collapsed",
     )
@@ -185,17 +185,17 @@ def run_ui():
     render_sidebar(document_name)
 
     st.markdown(
-        '<div class="topline"><div class="eyebrow">PDF CHAT</div><div class="status"><span class="status-dot"></span>Online</div></div>',
+        '<div class="topline"><div class="eyebrow">PDF RAG CHATBOT</div><div class="status"><span class="status-dot"></span>Ready</div></div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="hero"><h1>Ask your<br><span style="color:#55e6ff">PDF.</span></h1><p>Clear answers from your document.</p></div>',
+        '<div class="hero"><h1>Talk to your<br><span style="color:#55e6ff">PDF.</span></h1><p>Clear answers from your document.</p></div>',
         unsafe_allow_html=True,
     )
 
     if not uploaded_pdf:
-        st.markdown('<div class="section-label">Start</div><div class="upload-heading">Add a PDF</div><p class="upload-caption">Then ask a question.</p>', unsafe_allow_html=True)
-        st.markdown('<div class="empty"><div class="empty-icon">PDF</div><h2>Drop a PDF to begin</h2><p>Your document chat starts here.</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">Get started</div><div class="upload-heading">Upload a PDF</div><p class="upload-caption">Then ask anything.</p>', unsafe_allow_html=True)
+        st.markdown('<div class="empty"><div class="empty-icon">PDF</div><h2>Your workspace awaits.</h2><p>Upload a PDF to begin.</p></div>', unsafe_allow_html=True)
         return
 
     file_bytes = uploaded_pdf.getvalue()
@@ -206,7 +206,7 @@ def run_ui():
 
     text, chunks = prepare_pdf(file_bytes)
     if not text.strip():
-        st.error("This PDF has no selectable text.")
+        st.error("This PDF has no readable text.")
         return
 
     index = None
@@ -223,15 +223,14 @@ def run_ui():
         try:
             answer = rag_answer(query, index, chunks)
         except RateLimitError:
-            answer = "The assistant is busy right now. Please try again in a moment."
+            answer = "The assistant is busy. Try again shortly."
         except BadRequestError as error:
             if "content_filter" in str(error):
                 answer = (
-                    "This request was blocked by the safety filter. "
-                    "Please try a different question about the document."
+                    "That question was blocked. Try another one."
                 )
             else:
-                answer = "The request could not be completed. Please try again."
+                answer = "That did not work. Please try again."
         st.session_state.messages.append({"role": "assistant", "content": answer})
         with st.chat_message("assistant"):
             st.markdown(answer)
