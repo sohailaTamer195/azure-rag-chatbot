@@ -10,26 +10,51 @@ STOP_WORDS = {
     "how", "in", "is", "it", "of", "on", "or", "that", "the", "this",
     "to", "was", "what", "when", "where", "which", "who", "why", "with",
 }
+TOKEN_PATTERN = re.compile(r"[^\W_]+", re.UNICODE)
+ARABIC_TRANSLATION = str.maketrans({"أ": "ا", "إ": "ا", "آ": "ا", "ى": "ي", "ة": "ه"})
+
+
+def _normalize_token(token):
+    token = re.sub(r"[\u064B-\u065F\u0670]", "", token.casefold())
+    token = token.translate(ARABIC_TRANSLATION)
+    for suffix in ("ing", "ed", "es", "s"):
+        if len(token) > len(suffix) + 3 and token.endswith(suffix):
+            return token[: -len(suffix)]
+    return token
 
 
 def _terms(text):
     return {
-        term for term in re.findall(r"\w+", text.casefold())
-        if term not in STOP_WORDS and len(term) > 2
+        term
+        for raw_term in TOKEN_PATTERN.findall(text)
+        if (term := _normalize_token(raw_term)) not in STOP_WORDS and len(term) > 2
     }
 
 
 def retrieve(query, index, chunks, k=6):
-    query_normalized = " ".join(re.findall(r"\w+", query.casefold()))
     query_terms = _terms(query)
+    query_phrase = " ".join(
+        _normalize_token(term)
+        for term in TOKEN_PATTERN.findall(query)
+        if _normalize_token(term) not in STOP_WORDS
+    )
 
     lexical_scores = []
     for position, chunk in enumerate(chunks):
-        chunk_normalized = " ".join(re.findall(r"\w+", chunk.casefold()))
+        chunk_normalized = " ".join(
+            _normalize_token(term) for term in TOKEN_PATTERN.findall(chunk)
+        )
         chunk_terms = _terms(chunk)
-        score = len(chunk_terms.intersection(query_terms))
-        if query_normalized and query_normalized in chunk_normalized:
-            score += len(query_terms) + 2
+        overlap = chunk_terms.intersection(query_terms)
+        score = len(overlap) * 3
+        if query_phrase and query_phrase in chunk_normalized:
+            score += len(query_terms) * 4
+        for query_term in query_terms - overlap:
+            if len(query_term) >= 4 and any(
+                token.startswith(query_term) or query_term.startswith(token)
+                for token in chunk_terms
+            ):
+                score += 1
         if score:
             lexical_scores.append((score, position))
     lexical_indexes = [
