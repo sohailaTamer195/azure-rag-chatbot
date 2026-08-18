@@ -2,7 +2,7 @@ import hashlib
 import io
 
 import streamlit as st
-from openai import RateLimitError
+from openai import BadRequestError, RateLimitError
 
 from services.chunker import chunk_pages
 from services.pdf_loader import load_pdf_pages
@@ -225,6 +225,14 @@ def run_ui():
             answer = rag_answer(query, index, chunks)
         except RateLimitError:
             answer = "The assistant is busy right now. Please try again in a moment."
+        except BadRequestError as error:
+            if "content_filter" in str(error):
+                answer = (
+                    "This request was blocked by the safety filter. "
+                    "Please try a different question about the document."
+                )
+            else:
+                answer = "The request could not be completed. Please try again."
         st.session_state.messages.append({"role": "assistant", "content": answer})
         with st.chat_message("assistant"):
             st.markdown(answer)
