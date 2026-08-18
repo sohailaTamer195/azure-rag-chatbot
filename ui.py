@@ -224,6 +224,8 @@ def run_ui():
             answer = rag_answer(query, index, chunks)
         except RateLimitError:
             answer = "The assistant is busy. Try again shortly."
+        except RuntimeError:
+            answer = "Add Azure settings before asking questions."
         except BadRequestError as error:
             if "content_filter" in str(error):
                 answer = (

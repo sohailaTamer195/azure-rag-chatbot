@@ -87,6 +87,9 @@ def retrieve(query, index, chunks, k=6):
 
 
 def rag_answer(query, index, chunks):
+    if client is None or not CHAT_DEPLOYMENT:
+        raise RuntimeError("Azure OpenAI is not configured.")
+
     context_chunks = retrieve(query, index, chunks)
     context = "\n\n".join(context_chunks)
 
