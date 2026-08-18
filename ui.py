@@ -151,24 +151,23 @@ def render_sidebar(document_name=None):
             '<div class="brand"><div class="brand-mark">N</div><div class="brand-name">Neon Archive</div></div>',
             unsafe_allow_html=True,
         )
-        if st.button("New conversation", icon=":material/add:", use_container_width=True):
+        if st.button("New chat", icon=":material/add:", use_container_width=True):
             st.session_state.messages = []
             st.rerun()
 
-        st.markdown('<div class="section-label">Current file</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">File</div>', unsafe_allow_html=True)
         if document_name:
             st.markdown(
-                f'<div class="file-card"><div class="file-icon">PDF</div><div><div class="file-name">{document_name}</div><div class="file-state">Ready to explore</div></div></div>',
+                f'<div class="file-card"><div class="file-icon">PDF</div><div><div class="file-name">{document_name}</div><div class="file-state">Ready</div></div></div>',
                 unsafe_allow_html=True,
             )
         else:
-            st.caption("No file selected yet")
+            st.caption("No file")
 
-        st.markdown('<div class="section-label">Quick tips</div>', unsafe_allow_html=True)
-        st.markdown('<div class="tip"><strong>Ask naturally</strong>Use complete questions for more useful answers.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="tip"><strong>Go specific</strong>Ask about names, dates, definitions, or key points.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="tip"><strong>Stay curious</strong>Follow up to explore another part of the file.</div>', unsafe_allow_html=True)
-        st.markdown('<div class="sidebar-note">Your workspace is ready when you are. Drop in a PDF to start a focused conversation.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">Tips</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tip"><strong>Ask clearly</strong>Use complete questions.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tip"><strong>Be specific</strong>Names and dates help.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tip"><strong>Follow up</strong>Keep exploring.</div>', unsafe_allow_html=True)
 
 
 def run_ui():
@@ -186,17 +185,17 @@ def run_ui():
     render_sidebar(document_name)
 
     st.markdown(
-        '<div class="topline"><div class="eyebrow">Private document workspace</div><div class="status"><span class="status-dot"></span>Assistant online</div></div>',
+        '<div class="topline"><div class="eyebrow">PDF CHAT</div><div class="status"><span class="status-dot"></span>Online</div></div>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<div class="hero"><h1>Talk to your<br><span style="color:#55e6ff">documents.</span></h1><p>A calm, precise space for exploring the ideas inside every PDF.</p></div>',
+        '<div class="hero"><h1>Ask your<br><span style="color:#55e6ff">PDF.</span></h1><p>Clear answers from your document.</p></div>',
         unsafe_allow_html=True,
     )
 
     if not uploaded_pdf:
-        st.markdown('<div class="section-label">Start here</div><div class="upload-heading">Bring a document into focus</div><p class="upload-caption">Upload a PDF and begin asking questions in seconds.</p>', unsafe_allow_html=True)
-        st.markdown('<div class="empty"><div class="empty-icon">PDF</div><h2>Your next conversation starts here</h2><p>Choose a document above to unlock your workspace.</p></div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">Start</div><div class="upload-heading">Add a PDF</div><p class="upload-caption">Then ask a question.</p>', unsafe_allow_html=True)
+        st.markdown('<div class="empty"><div class="empty-icon">PDF</div><h2>Drop a PDF to begin</h2><p>Your document chat starts here.</p></div>', unsafe_allow_html=True)
         return
 
     file_bytes = uploaded_pdf.getvalue()
@@ -207,7 +206,7 @@ def run_ui():
 
     text, chunks = prepare_pdf(file_bytes)
     if not text.strip():
-        st.error("This PDF does not contain selectable text. Please choose a text-based PDF.")
+        st.error("This PDF has no selectable text.")
         return
 
     index = None
@@ -216,7 +215,7 @@ def run_ui():
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    query = st.chat_input("Ask anything about this document")
+    query = st.chat_input("Ask about this PDF")
     if query:
         st.session_state.messages.append({"role": "user", "content": query})
         with st.chat_message("user"):
